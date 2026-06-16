@@ -1,0 +1,666 @@
+[
+ 
+    {
+      "name": "01_System_Elements",
+      "children": [
+        {
+          "name": "01_Sensing",
+          "children": [
+            {
+              "name": "LV_Voltage_Measurement"
+            },
+            {
+              "name": "HV_Voltage_Measurement"
+            },
+            {
+              "name": "Current_Sensing"
+            },
+            {
+              "name": "Isolation_Monitoring"
+            },
+            {
+              "name": "Temperature_Monitoring"
+            },
+            {
+              "name": "Position_Sensing"
+            },
+            {
+              "name": "Cell_Voltage_Monitoring"
+            },
+            {
+              "name": "Pressure_Sensing"
+            }
+          ]
+        },
+        {
+          "name": "02_Actuation_and_Power",
+          "children": [
+            {
+              "name": "Power_Stage_Control"
+            },
+            {
+              "name": "Gate_Driver_Control"
+            },
+            {
+              "name": "Precharge_Control"
+            },
+            {
+              "name": "Contactor_Control"
+            },
+            {
+              "name": "Balancing_Circuit_Control"
+            },
+            {
+              "name": "Cooling_Actuation"
+            }
+          ]
+        },
+        {
+          "name": "03_Control_and_Processing",
+          "children": [
+            {
+              "name": "Control_Logic"
+            },
+            {
+              "name": "State_Machine_Design"
+            },
+            {
+              "name": "Fault_Handling_Strategies"
+            },
+            {
+              "name": "Real_Time_Scheduling"
+            },
+            {
+              "name": "Signal_Conditioning"
+            },
+            {
+              "name": "Estimation_Algorithms"
+            }
+          ]
+        },
+        {
+          "name": "04_Communication",
+          "children": [
+            {
+              "name": "CAN_Communication"
+            },
+            {
+              "name": "LIN_Communication"
+            },
+            {
+              "name": "Ethernet_Automotive"
+            },
+            {
+              "name": "Diagnostics_UDS"
+            },
+            {
+              "name": "Diagnostics_OBD"
+            },
+            {
+              "name": "XCP_Calibration"
+            },
+            {
+              "name": "OTA_Update_Interfaces"
+            }
+          ]
+        },
+        {
+          "name": "05_Platform_and_MCU",
+          "children": [
+            {
+              "name": "MCU_Architecture"
+            },
+            {
+              "name": "Memory_Services"
+            },
+            {
+              "name": "Interrupt_Handling"
+            },
+            {
+              "name": "Watchdog_Management"
+            },
+            {
+              "name": "Bootloader"
+            },
+            {
+              "name": "Hardware_Abstraction_Layer"
+            }
+          ]
+        },
+        {
+          "name": "06_Safety_Mechanisms",
+          "children": [
+            {
+              "name": "Monitoring_Concepts"
+            },
+            {
+              "name": "Redundancy_Patterns"
+            },
+            {
+              "name": "Plausibility_Checks"
+            },
+            {
+              "name": "Diagnostic_Coverage"
+            },
+            {
+              "name": "Safe_State_Implementation"
+            },
+            {
+              "name": "Fault_Reaction_Time"
+            },
+            {
+              "name": "Degradation_Strategies"
+            }
+          ]
+        },
+        {
+          "name": "07_Security_Services",
+          "children": [
+            {
+              "name": "Secure_Boot"
+            },
+            {
+              "name": "Secure_Communication"
+            },
+            {
+              "name": "Encryption_Methods"
+            },
+            {
+              "name": "Key_Management"
+            },
+            {
+              "name": "Intrusion_Detection"
+            },
+            {
+              "name": "Threat_Mitigation"
+            }
+          ]
+        },
+        {
+          "name": "08_Thermal_and_Energy_Management",
+          "children": [
+            {
+              "name": "Thermal_Modeling"
+            },
+            {
+              "name": "Cooling_Strategy"
+            },
+            {
+              "name": "Efficiency_Optimization"
+            },
+            {
+              "name": "Derating_Strategies"
+            }
+          ]
+        },
+        {
+          "name": "09_Hardware_Design_Aspects",
+          "children": [
+            {
+              "name": "PCB_Design"
+            },
+            {
+              "name": "EMI_EMC"
+            },
+            {
+              "name": "Creepage_Clearance"
+            },
+            {
+              "name": "Isolation_Strategy"
+            },
+            {
+              "name": "Component_Derating"
+            }
+          ]
+        },
+        {
+          "name": "10_Diagnostics_and_Error_Management",
+          "children": [
+            {
+              "name": "DTC_Handling"
+            },
+            {
+              "name": "Fault_Injection_Strategies"
+            },
+            {
+              "name": "Logging_and_Traceability"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02_Components",
+      "children": [
+        {
+          "name": "DCDC_Converter",
+          "children": [
+            {
+              "name": "Working_Principle"
+            },
+            {
+              "name": "Topology"
+            },
+            {
+              "name": "Modes_of_Operation"
+            },
+            {
+              "name": "Control_Strategy"
+            },
+            {
+              "name": "Safe_States"
+            },
+            {
+              "name": "Failure_Modes"
+            },
+            {
+              "name": "Interface_Definition"
+            },
+            {
+              "name": "Performance_Parameters"
+            },
+            {
+              "name": "Integration_with_Vehicle"
+            },
+            {
+              "name": "Special_Functions"
+            }
+          ]
+        },
+        {
+          "name": "Traction_Inverter",
+          "children": [
+            {
+              "name": "Working_Principle"
+            },
+            {
+              "name": "FOC_Control"
+            },
+            {
+              "name": "Motor_Interface"
+            },
+            {
+              "name": "Torque_Control"
+            },
+            {
+              "name": "Safe_States"
+            },
+            {
+              "name": "Failure_Modes"
+            },
+            {
+              "name": "Gate_Drive_Strategy"
+            },
+            {
+              "name": "Thermal_Constraints"
+            },
+            {
+              "name": "Regenerative_Braking"
+            }
+          ]
+        },
+        {
+          "name": "Battery_Management_System",
+          "children": [
+            {
+              "name": "Working_Principle"
+            },
+            {
+              "name": "SOC_SOH_SOP_Estimation"
+            },
+            {
+              "name": "Cell_Balancing"
+            },
+            {
+              "name": "Contactor_Control"
+            },
+            {
+              "name": "Charging_Strategy"
+            },
+            {
+              "name": "Safe_States"
+            },
+            {
+              "name": "Failure_Modes"
+            },
+            {
+              "name": "Pack_Architecture"
+            },
+            {
+              "name": "Isolation_Monitoring"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03_Functional_Domains",
+      "children": [
+        {
+          "name": "Power_Management"
+        },
+        {
+          "name": "Energy_Flow_Control"
+        },
+        {
+          "name": "Charging_and_Discharge"
+        },
+        {
+          "name": "Thermal_Management"
+        },
+        {
+          "name": "Fault_Management"
+        },
+        {
+          "name": "Diagnostics_Strategy"
+        },
+        {
+          "name": "Vehicle_Networking"
+        },
+        {
+          "name": "Calibration_Strategies"
+        },
+        {
+          "name": "Degradation_and_Limp_Mode"
+        }
+      ]
+    },
+    {
+      "name": "04_Compliance_and_Process",
+      "children": [
+        {
+          "name": "01_Requirements_Engineering",
+          "children": [
+            {
+              "name": "Requirement_Writing_Guidelines"
+            },
+            {
+              "name": "Requirement_Quality_Checks"
+            },
+            {
+              "name": "Traceability_Methods"
+            },
+            {
+              "name": "Tools"
+            },
+            {
+              "name": "Anti_Patterns"
+            }
+          ]
+        },
+        {
+          "name": "02_System_Architecture",
+          "children": [
+            {
+              "name": "Architectural_Patterns"
+            },
+            {
+              "name": "Interface_Definition_Standards"
+            },
+            {
+              "name": "Decomposition_Methods"
+            },
+            {
+              "name": "Safety_Architecture"
+            }
+          ]
+        },
+        {
+          "name": "03_Functional_Safety_ISO26262",
+          "children": [
+            {
+              "name": "Item_Definition"
+            },
+            {
+              "name": "HARA"
+            },
+            {
+              "name": "Functional_Safety_Concept"
+            },
+            {
+              "name": "Technical_Safety_Concept"
+            },
+            {
+              "name": "Safety_Analysis"
+            },
+            {
+              "name": "ASIL_Decomposition"
+            },
+            {
+              "name": "Safety_Case"
+            },
+            {
+              "name": "Confirmation_Measures"
+            }
+          ]
+        },
+        {
+          "name": "04_Cybersecurity_ISO21434",
+          "children": [
+            {
+              "name": "TARA"
+            },
+            {
+              "name": "Security_Concept"
+            },
+            {
+              "name": "Threat_Modelling"
+            },
+            {
+              "name": "Secure_Design_Principles"
+            },
+            {
+              "name": "Response_and_Update"
+            }
+          ]
+        },
+        {
+          "name": "05_Verification_and_Validation",
+          "children": [
+            {
+              "name": "Test_Strategy"
+            },
+            {
+              "name": "Test_Case_Design"
+            },
+            {
+              "name": "SIL_MIL_HIL"
+            },
+            {
+              "name": "Vehicle_Testing"
+            },
+            {
+              "name": "Coverage_Analysis"
+            },
+            {
+              "name": "Regression_Strategy"
+            }
+          ]
+        },
+        {
+          "name": "06_ASPICE_Process",
+          "children": [
+            {
+              "name": "SYS1"
+            },
+            {
+              "name": "SYS2"
+            },
+            {
+              "name": "SYS3"
+            },
+            {
+              "name": "SWE1_to_SWE6"
+            },
+            {
+              "name": "SUP_Process"
+            },
+            {
+              "name": "MAN_Process"
+            },
+            {
+              "name": "Assessment_Guidelines"
+            }
+          ]
+        },
+        {
+          "name": "07_Model_Based_Development",
+          "children": [
+            {
+              "name": "Modeling_Guidelines"
+            },
+            {
+              "name": "Simulink_Standards"
+            },
+            {
+              "name": "Auto_Code_Generation"
+            },
+            {
+              "name": "Model_Testing"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05_AI_Knowledge_Layers",
+      "children": [
+        {
+          "name": "Ontology_Definitions"
+        },
+        {
+          "name": "Entity_Relationship_Map"
+        },
+        {
+          "name": "Prompt_Templates"
+        },
+        {
+          "name": "Retrieval_Strategies"
+        },
+        {
+          "name": "Embedding_Structure"
+        },
+        {
+          "name": "Chunking_Strategies"
+        },
+        {
+          "name": "Domain_Semantic_Links",
+          "children": [
+            {
+              "name": "SystemElement_to_Component_Map"
+            },
+            {
+              "name": "Safety_Linkages"
+            },
+            {
+              "name": "Requirement_to_Test_Trace"
+            }
+          ]
+        },
+        {
+          "name": "Use_Case_Library",
+          "children": [
+            {
+              "name": "Requirement_Generation"
+            },
+            {
+              "name": "Safety_Analysis_Automation"
+            },
+            {
+              "name": "Testcase_Generation"
+            },
+            {
+              "name": "Diagnostics_Reasoning"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06_Customer_Specific",
+      "children": [
+        {
+          "name": "Customer_1",
+          "children": [
+            {
+              "name": "Project_1",
+              "children": [
+                {
+                  "name": "Custom_Requirements"
+                },
+                {
+                  "name": "Architecture_Deviation"
+                },
+                {
+                  "name": "Safety_Concept_Deviation"
+                },
+                {
+                  "name": "Diagnostics_Definition"
+                },
+                {
+                  "name": "Communication_Matrix"
+                },
+                {
+                  "name": "Calibration_Data"
+                },
+                {
+                  "name": "Lessons_Learned"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Customer_2",
+          "children": [
+            {
+              "name": "Project_1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07_Common_Metadata_and_Templates",
+      "children": [
+        {
+          "name": "Document_Templates",
+          "children": [
+            {
+              "name": "Requirement_Template"
+            },
+            {
+              "name": "Safety_Case_Template"
+            },
+            {
+              "name": "Testcase_Template"
+            }
+          ]
+        },
+        {
+          "name": "Tagging_System",
+          "children": [
+            {
+              "name": "ASIL_Level"
+            },
+            {
+              "name": "Component_Type"
+            },
+            {
+              "name": "Function_Type"
+            },
+            {
+              "name": "System_Element_Tag"
+            }
+          ]
+        },
+        {
+          "name": "Versioning_and_Lifecycle"
+        },
+        {
+          "name": "Cross_Reference_Index"
+        }
+      ]
+    }
+  
+  ]

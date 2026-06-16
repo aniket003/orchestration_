@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Requirement agent Socket.IO console" />
+    <title>Requirement Agent Console</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="workspace">
+      <section class="panel chat-panel" aria-labelledby="chat-title">
+        <header class="panel-header">
+          <div>
+            <p class="eyebrow">Orchestration API</p>
+            <h1 id="chat-title">Requirement agent</h1>
+          </div>
+          <div class="connection-pill" id="connection-pill" data-state="connecting">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="connection-label">Connecting</span>
+          </div>
+        </header>
+
+        <div class="messages" id="messages" aria-live="polite">
+          <article class="message agent-message">
+            <div class="message-label">Agent</div>
+            <div class="message-card">
+              Send a requirement and I will normalize and analyze it through the Socket.IO agent event.
+            </div>
+          </article>
+        </div>
+
+        <form class="composer" id="message-form">
+          <label for="requirement-input">Requirement</label>
+          <div class="composer-row">
+            <textarea
+              id="requirement-input"
+              rows="2"
+              placeholder="The system shall report voltage."
+              required
+            ></textarea>
+            <button type="submit" id="send-button" disabled>
+              <span>Send</span>
+              <span aria-hidden="true">&#8593;</span>
+            </button>
+          </div>
+          <p class="composer-hint">Press Enter to send, Shift+Enter for a new line.</p>
+        </form>
+      </section>
+
+      <section class="panel trace-panel" aria-labelledby="trace-title">
+        <header class="panel-header trace-header">
+          <div>
+            <p class="eyebrow">Live transport</p>
+            <h2 id="trace-title">Socket trail</h2>
+          </div>
+          <div class="header-actions">
+            <button class="secondary-button" type="button" id="reconnect-button">Reconnect</button>
+            <button class="secondary-button" type="button" id="clear-button">Clear</button>
+          </div>
+        </header>
+
+        <dl class="connection-details">
+          <div>
+            <dt>Endpoint</dt>
+            <dd id="endpoint-value">-</dd>
+          </div>
+          <div>
+            <dt>Transport</dt>
+            <dd>WebSocket</dd>
+          </div>
+          <div>
+            <dt>Engine SID</dt>
+            <dd id="engine-sid">-</dd>
+          </div>
+          <div>
+            <dt>Socket SID</dt>
+            <dd id="socket-sid">-</dd>
+          </div>
+        </dl>
+
+        <div class="trace-list" id="trace-list" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

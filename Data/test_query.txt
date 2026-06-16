@@ -1,0 +1,6 @@
+
+Write sys2 requirements for LV voltage measurement for a 400V to 12V DCDC converter.
+
+
+Write a SYS2 requirement for the following SYS1 requirement.
+The DC-DC converter shall measure the low-voltage (LV) output with sufficient accuracy and integrity to support ASIL C safety requirements.

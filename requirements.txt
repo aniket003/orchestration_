@@ -1,0 +1,32 @@
+# Python runtime baseline: 3.13.x
+
+# Core application runtime
+fastapi==0.135.3
+uvicorn[standard]==0.44.0
+python-socketio==5.16.1
+pydantic==2.12.5
+pydantic-settings==2.13.1
+requests==2.32.5
+sqlalchemy==2.0.44
+alembic==1.17.1
+psycopg[binary]==3.2.12
+redis==6.4.0
+pypdf==6.10.0
+opentelemetry-api==1.40.0
+opentelemetry-sdk==1.40.0
+opentelemetry-exporter-otlp-proto-http==1.40.0
+opentelemetry-instrumentation-fastapi==0.61b0
+opentelemetry-instrumentation-logging==0.61b0
+langchain==1.3.1
+langgraph==1.2.0
+langgraph-checkpoint==4.1.0
+deepagents==0.6.1
+langchain-openai>=1.3.0,<2.0.0
+langchain-openrouter>=0.2.0,<1.0.0
+langchain-nvidia-ai-endpoints>=1.0.0,<2.0.0
+
+# Developer tooling
+pytest==8.4.2
+ruff==0.4.10
+pre-commit==4.2.0
+pip-audit>=2.7.0,<3.0.0
