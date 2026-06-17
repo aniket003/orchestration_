@@ -8,6 +8,10 @@ from langgraph.types import Command
 from openai import APIConnectionError, APIStatusError, APITimeoutError
 from openai import LengthFinishReasonError
 
+from agents.nodes.classify_clarification_answers import classify_clarification_answers
+from agents.nodes.classify_clarification_answers import (
+    classify_slot_clarification_answers,
+)
 from agents.nodes.create_slot_subqueries import create_slot_subqueries
 from agents.nodes.finalize_slot_subqueries import finalize_slot_subqueries
 from agents.nodes.understand_requirement_intent import understand_requirement_intent
@@ -22,6 +26,8 @@ logger = logging.getLogger("requirement_agent.graph")
 def route_after_intent(state: RequirementState) -> str:
     intent = state.get("intent") or {}
     if intent.get("clarification_questions"):
+        if state.get("auto_answer_clarifications"):
+            return "classify_clarification_answers"
         return "wait_for_clarification"
     return "create_slot_subqueries"
 
@@ -29,6 +35,8 @@ def route_after_intent(state: RequirementState) -> str:
 def route_after_slot_subqueries(state: RequirementState) -> str:
     plan = state.get("slot_subquery_plan") or {}
     if plan.get("requires_clarification"):
+        if state.get("auto_answer_clarifications"):
+            return "classify_slot_clarification_answers"
         return "wait_for_slot_clarification"
     return "finalize_slot_subqueries"
 
@@ -36,8 +44,13 @@ def route_after_slot_subqueries(state: RequirementState) -> str:
 def build_requirement_graph() -> Any:
     builder = StateGraph(RequirementState)
     builder.add_node("understand_requirement_intent", understand_requirement_intent)
+    builder.add_node("classify_clarification_answers", classify_clarification_answers)
     builder.add_node("wait_for_clarification", wait_for_clarification)
     builder.add_node("create_slot_subqueries", create_slot_subqueries)
+    builder.add_node(
+        "classify_slot_clarification_answers",
+        classify_slot_clarification_answers,
+    )
     builder.add_node("wait_for_slot_clarification", wait_for_slot_clarification)
     builder.add_node("finalize_slot_subqueries", finalize_slot_subqueries)
     builder.add_edge(START, "understand_requirement_intent")
@@ -45,19 +58,25 @@ def build_requirement_graph() -> Any:
         "understand_requirement_intent",
         route_after_intent,
         {
+            "classify_clarification_answers": "classify_clarification_answers",
             "wait_for_clarification": "wait_for_clarification",
             "create_slot_subqueries": "create_slot_subqueries",
         },
     )
+    builder.add_edge("classify_clarification_answers", "create_slot_subqueries")
     builder.add_edge("wait_for_clarification", "create_slot_subqueries")
     builder.add_conditional_edges(
         "create_slot_subqueries",
         route_after_slot_subqueries,
         {
+            "classify_slot_clarification_answers": (
+                "classify_slot_clarification_answers"
+            ),
             "wait_for_slot_clarification": "wait_for_slot_clarification",
             "finalize_slot_subqueries": "finalize_slot_subqueries",
         },
     )
+    builder.add_edge("classify_slot_clarification_answers", "finalize_slot_subqueries")
     builder.add_edge("wait_for_slot_clarification", "finalize_slot_subqueries")
     builder.add_edge("finalize_slot_subqueries", END)
     return builder.compile(checkpointer=MemorySaver())
@@ -117,6 +136,7 @@ async def _invoke_graph(input_value: Any, thread_id: str, failure_context: str) 
 async def run_requirement_agent(
     requirement: str,
     thread_id: str | None = None,
+    auto_answer_clarifications: bool = False,
 ) -> dict[str, Any]:
     cleaned_requirement = requirement.strip()
     if not cleaned_requirement:
@@ -124,7 +144,10 @@ async def run_requirement_agent(
     graph_thread_id = thread_id or str(uuid4())
     logger.info("graph=requirement_agent thread_id=%s status=started", graph_thread_id)
     result = await _invoke_graph(
-        {"requirement": cleaned_requirement},
+        {
+            "requirement": cleaned_requirement,
+            "auto_answer_clarifications": auto_answer_clarifications,
+        },
         graph_thread_id,
         "parsing requirement intent",
     )
@@ -138,12 +161,18 @@ async def run_requirement_agent(
 async def resume_requirement_agent(
     thread_id: str,
     clarification_answers: dict[str, Any] | None = None,
+    auto_answer_clarifications: bool | None = None,
 ) -> dict[str, Any]:
     if not thread_id.strip():
         raise ValueError("thread_id must not be empty.")
     logger.info("graph=requirement_agent thread_id=%s status=resuming", thread_id)
+    update = (
+        {"auto_answer_clarifications": auto_answer_clarifications}
+        if auto_answer_clarifications is not None
+        else None
+    )
     result = await _invoke_graph(
-        Command(resume=clarification_answers or {}),
+        Command(update=update, resume=clarification_answers or {}),
         thread_id,
         "creating slot subqueries",
     )

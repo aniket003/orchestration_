@@ -27,6 +27,16 @@ class AzureOpenAISettings(BaseSettings):
     azure_openai_max_retries: int = Field(default=2, ge=0)
 
 
+class AgentSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    agent_auto_answer_clarifications: bool = False
+
+
 @lru_cache(maxsize=1)
 def get_settings() -> AzureOpenAISettings:
     try:
@@ -39,3 +49,8 @@ def get_settings() -> AzureOpenAISettings:
         raise LLMConfigurationError(
             f"Azure OpenAI is not configured. Set {required} in .env."
         ) from exc
+
+
+@lru_cache(maxsize=1)
+def get_agent_settings() -> AgentSettings:
+    return AgentSettings()

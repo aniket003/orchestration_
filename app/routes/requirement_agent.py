@@ -8,6 +8,7 @@ from pydantic import model_validator
 from agents.requirement_agent import AgentExecutionError
 from agents.requirement_agent import resume_requirement_agent
 from agents.requirement_agent import run_requirement_agent
+from core.config import get_agent_settings
 from core.config import LLMConfigurationError
 
 
@@ -17,6 +18,7 @@ router = APIRouter(tags=["requirement-agent"])
 class RequirementAgentRequest(BaseModel):
     requirement: str | None = Field(default=None, min_length=1)
     thread_id: str | None = Field(default=None, min_length=1)
+    auto_answer_clarifications: bool | None = None
     clarification_answers: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
@@ -42,15 +44,22 @@ class RequirementAgentResponse(BaseModel):
 )
 async def run_agent(payload: RequirementAgentRequest) -> RequirementAgentResponse:
     try:
+        auto_answer_clarifications = (
+            payload.auto_answer_clarifications
+            if payload.auto_answer_clarifications is not None
+            else get_agent_settings().agent_auto_answer_clarifications
+        )
         if payload.requirement is not None:
             result = await run_requirement_agent(
                 payload.requirement,
                 payload.thread_id,
+                auto_answer_clarifications=auto_answer_clarifications,
             )
         else:
             result = await resume_requirement_agent(
                 payload.thread_id or "",
                 payload.clarification_answers,
+                auto_answer_clarifications=payload.auto_answer_clarifications,
             )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

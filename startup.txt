@@ -1,0 +1,9 @@
+cd /Users/aniket/Desktop/orchestartion
+source .venv/bin/activate
+python main.py
+
+
+
+cd /Users/aniket/Desktop/orchestartion
+source .venv/bin/activate
+python -m app.cli --auto-answer "Write sys2 requirements for LV voltage measurement for a 400V to 12V DCDC converter."

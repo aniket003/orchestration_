@@ -12,6 +12,7 @@ from agents.requirement_agent import resume_requirement_agent
 from agents.requirement_agent import run_requirement_agent
 from app.routes.health import router as health_router
 from app.routes.requirement_agent import router as requirement_agent_router
+from core.config import get_agent_settings
 from core.config import LLMConfigurationError
 
 
@@ -56,20 +57,37 @@ async def run_requirement_agent_event(sid: str, data: Any) -> dict[str, Any]:
         }
 
     try:
+        auto_answer_clarifications = data.get("auto_answer_clarifications")
+        if auto_answer_clarifications is not None and not isinstance(
+            auto_answer_clarifications,
+            bool,
+        ):
+            return {
+                "ok": False,
+                "error": "auto_answer_clarifications must be a boolean when provided.",
+            }
+
         if isinstance(data.get("thread_id"), str) and "clarification_answers" in data:
             result = await resume_requirement_agent(
                 data["thread_id"],
                 data.get("clarification_answers") or {},
+                auto_answer_clarifications=auto_answer_clarifications,
             )
         elif isinstance(data.get("requirement"), str):
+            if auto_answer_clarifications is None:
+                auto_answer_clarifications = (
+                    get_agent_settings().agent_auto_answer_clarifications
+                )
             result = await run_requirement_agent(
                 data["requirement"],
                 data.get("thread_id"),
+                auto_answer_clarifications=auto_answer_clarifications,
             )
         elif isinstance(data.get("thread_id"), str):
             result = await resume_requirement_agent(
                 data["thread_id"],
                 data.get("clarification_answers") or {},
+                auto_answer_clarifications=auto_answer_clarifications,
             )
         else:
             return {

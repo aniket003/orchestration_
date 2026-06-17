@@ -4,15 +4,20 @@ from typing import Any
 import pytest
 import httpx
 from fastapi.testclient import TestClient
+from langchain_core.messages import AIMessage
 from openai import APITimeoutError
 
 import agents.requirement_agent as requirement_agent
+import agents.nodes.classify_clarification_answers as classifier_node
 import agents.nodes.create_slot_subqueries as subquery_node
 import agents.nodes.finalize_slot_subqueries as finalize_node
+import agents.nodes.llm_usage as llm_usage_node
 import agents.nodes.understand_requirement_intent as intent_node
 from agents.knowledge.knowledge_base import match_knowledge_paths
 from agents.knowledge.knowledge_base import enrich_slots_with_knowledge_paths
 from agents.knowledge.technical_matrix import resolve_slot_references
+from agents.nodes.classify_clarification_answers import AutoClarificationAnswer
+from agents.nodes.classify_clarification_answers import AutoClarificationPlan
 from agents.nodes.create_slot_subqueries import SlotClarificationQuestion
 from agents.nodes.create_slot_subqueries import SlotSubquery
 from agents.nodes.create_slot_subqueries import SlotSubqueryPlan
@@ -22,6 +27,7 @@ from agents.nodes.understand_requirement_intent import InferredSlotReference
 from agents.nodes.understand_requirement_intent import RequirementIntentAnalysis
 from agents.nodes.understand_requirement_intent import SelectedSlotReference
 from app import fastapi_app
+from core.config import get_agent_settings
 
 
 class FakeIntentStructuredModel:
@@ -191,6 +197,7 @@ class FakeSlotSubqueryStructuredModel:
 class FakeFinalSubqueryStructuredModel:
     async def ainvoke(self, messages: list[Any]) -> FinalSubqueryPlan:
         assert "Create final slot subqueries from this state:" in messages[-1].content
+        assert "retrieval/search plans" in messages[0].content
         assert "mapped_slot_clarification_answers" in messages[-1].content
         assert "12 V output terminal after filter" in messages[-1].content
         return FinalSubqueryPlan(
@@ -201,26 +208,140 @@ class FakeFinalSubqueryStructuredModel:
                     slot_type="Component Definition",
                     slot_pack_id="LV_SENS__COMP_DEF__SYS2__V1",
                     channel="Technical",
+                    retrieval_objective=(
+                        "Find technical documents defining the LV voltage measurement "
+                        "point and signal boundaries."
+                    ),
+                    rag_query=(
+                        "LV voltage measurement point 12 V output terminal after "
+                        "filter signal definition range [interface]"
+                    ),
+                    keyword_query=(
+                        '"LV voltage" AND ("measurement point" OR "output terminal") '
+                        'AND ("after filter" OR "LC filter")'
+                    ),
+                    graph_query_intent=(
+                        "Traverse LV Sensing to measurement signal, DC-DC output, "
+                        "interfaces, and component definition requirements."
+                    ),
+                    search_containers=[
+                        "01_System_Elements/01_Sensing/LV_Voltage_Measurement"
+                    ],
+                    required_evidence=[
+                        "measurement point",
+                        "signal definition",
+                        "electrical range",
+                    ],
+                    filters=[
+                        "feature=LV Sensing (Voltage Measurement)",
+                        "slot_type=Component Definition",
+                    ],
+                    retrieval_mode="hybrid",
                     final_subquery=(
-                        "Generate the final Component Definition requirement for LV "
-                        "voltage measured at the 12 V output terminal after filter."
+                        "Retrieve source documents defining LV voltage measurement "
+                        "at the 12 V output terminal after filter, including signal "
+                        "boundaries, range, units, and interfaces."
                     ),
                     applied_clarification_answer="12 V output terminal after filter",
                     unresolved_items=[],
-                    ready_for_generation=True,
+                    ready_for_retrieval=True,
                 ),
                 FinalSlotSubquery(
                     feature="LV Sensing (Voltage Measurement)",
                     slot_type="Functional Behavior",
                     slot_pack_id="LV_SENS__FUNC_BEHAV__SYS2__V1",
                     channel="Technical",
+                    retrieval_objective=(
+                        "Find technical documents defining LV voltage reporting "
+                        "update behavior and timing."
+                    ),
+                    rag_query=(
+                        "LV voltage reporting update rate 100 Hz operating modes "
+                        "latency filtering behavior"
+                    ),
+                    keyword_query=(
+                        '"LV voltage" AND ("update rate" OR "100 Hz" OR latency)'
+                    ),
+                    graph_query_intent=(
+                        "Traverse LV Sensing to functional behavior, timing, modes, "
+                        "and reporting consumers."
+                    ),
+                    search_containers=[
+                        "01_System_Elements/01_Sensing/LV_Voltage_Measurement"
+                    ],
+                    required_evidence=[
+                        "update rate",
+                        "operating modes",
+                        "latency",
+                    ],
+                    filters=[
+                        "feature=LV Sensing (Voltage Measurement)",
+                        "slot_type=Functional Behavior",
+                    ],
+                    retrieval_mode="hybrid",
                     final_subquery=(
-                        "Generate the final Functional Behavior requirement for LV "
-                        "voltage reporting with [update rate]."
+                        "Retrieve source documents defining LV voltage reporting "
+                        "behavior with 100 Hz update rate, active modes, and latency."
                     ),
                     applied_clarification_answer="100 Hz update",
-                    unresolved_items=["update rate confirmation"],
-                    ready_for_generation=False,
+                    unresolved_items=["mode-specific validity conditions"],
+                    ready_for_retrieval=True,
+                ),
+            ],
+        )
+
+
+class FakeAutoClarificationStructuredModel:
+    async def ainvoke(self, messages: list[Any]) -> AutoClarificationPlan:
+        content = messages[-1].content
+        assert "Answer these clarification questions from the current state:" in content
+        if '"stage": "requirement_intent_clarifications"' in content:
+            return AutoClarificationPlan(
+                summary="Answered requirement-intent clarifications from context.",
+                answers=[
+                    AutoClarificationAnswer(
+                        question="Which voltage shall the system report?",
+                        answer="12 V output voltage",
+                        confidence="Medium",
+                        rationale="LV voltage reporting implies the 12 V output.",
+                    ),
+                    AutoClarificationAnswer(
+                        question="Through which interface shall it be reported?",
+                        answer="CAN signal [signal name TBD]",
+                        confidence="Low",
+                        rationale="CAN is a common reporting interface but not explicit.",
+                    ),
+                    AutoClarificationAnswer(
+                        question="What update rate or response time is required?",
+                        answer="100 Hz update",
+                        confidence="Low",
+                        rationale="A concrete assumption is needed to continue.",
+                    ),
+                ],
+            )
+
+        return AutoClarificationPlan(
+            summary="Answered slot-level clarifications from context.",
+            answers=[
+                AutoClarificationAnswer(
+                    question=(
+                        "What LV measurement point shall be reported? Search/verify "
+                        "in container 01_System_Elements/01_Sensing/"
+                        "LV_Voltage_Measurement."
+                    ),
+                    answer="12 V output terminal after filter",
+                    confidence="Medium",
+                    rationale="Nearest LV measurement path supports this assumption.",
+                ),
+                AutoClarificationAnswer(
+                    question=(
+                        "What update rate or response time is required? "
+                        "Search/verify in container 01_System_Elements/01_Sensing/"
+                        "LV_Voltage_Measurement."
+                    ),
+                    answer="100 Hz update",
+                    confidence="Low",
+                    rationale="A concrete timing assumption is needed to continue.",
                 ),
             ],
         )
@@ -228,22 +349,76 @@ class FakeFinalSubqueryStructuredModel:
 
 class FakeChatModel:
     def with_structured_output(self, *args: Any, **kwargs: Any) -> Any:
-        assert kwargs == {"method": "json_schema", "strict": True}
+        assert kwargs in (
+            {"method": "json_schema", "strict": True},
+            {"method": "json_schema", "strict": True, "include_raw": True},
+        )
         if args[0] is RequirementIntentAnalysis:
-            return FakeIntentStructuredModel()
+            model = FakeIntentStructuredModel()
+            return FakeRawStructuredModel(model) if kwargs.get("include_raw") else model
+        if args[0] is AutoClarificationPlan:
+            model = FakeAutoClarificationStructuredModel()
+            return FakeRawStructuredModel(model) if kwargs.get("include_raw") else model
         if args[0] is SlotSubqueryPlan:
-            return FakeSlotSubqueryStructuredModel()
+            model = FakeSlotSubqueryStructuredModel()
+            return FakeRawStructuredModel(model) if kwargs.get("include_raw") else model
         if args[0] is FinalSubqueryPlan:
-            return FakeFinalSubqueryStructuredModel()
+            model = FakeFinalSubqueryStructuredModel()
+            return FakeRawStructuredModel(model) if kwargs.get("include_raw") else model
         raise AssertionError(f"Unexpected structured output model: {args[0]}")
+
+
+class FakeRawStructuredModel:
+    def __init__(self, model: Any) -> None:
+        self.model = model
+
+    async def ainvoke(self, messages: list[Any]) -> dict[str, Any]:
+        parsed = await self.model.ainvoke(messages)
+        return {
+            "raw": AIMessage(
+                content="",
+                usage_metadata={
+                    "input_tokens": 10,
+                    "output_tokens": 5,
+                    "total_tokens": 15,
+                },
+            ),
+            "parsed": parsed,
+            "parsing_error": None,
+        }
 
 
 @pytest.fixture(autouse=True)
 def mock_chat_model(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
-    monkeypatch.setattr(intent_node, "get_chat_model", lambda: FakeChatModel())
-    monkeypatch.setattr(subquery_node, "get_chat_model", lambda: FakeChatModel())
-    monkeypatch.setattr(finalize_node, "get_chat_model", lambda: FakeChatModel())
+    monkeypatch.setenv("AGENT_AUTO_ANSWER_CLARIFICATIONS", "false")
+    get_agent_settings.cache_clear()
+    monkeypatch.setattr(
+        intent_node,
+        "get_chat_model",
+        lambda: FakeChatModel(),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        classifier_node,
+        "get_chat_model",
+        lambda: FakeChatModel(),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        subquery_node,
+        "get_chat_model",
+        lambda: FakeChatModel(),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        finalize_node,
+        "get_chat_model",
+        lambda: FakeChatModel(),
+        raising=False,
+    )
+    monkeypatch.setattr(llm_usage_node, "get_chat_model", lambda: FakeChatModel())
     yield
+    get_agent_settings.cache_clear()
 
 
 client = TestClient(fastapi_app)
@@ -438,9 +613,96 @@ def test_slot_clarification_resume_runs_final_subquery_node() -> None:
     assert (
         result["final_subquery_plan"]["final_subqueries_by_slot"][
             "LV_SENS__COMP_DEF__SYS2__V1"
-        ]["ready_for_generation"]
+        ]["ready_for_retrieval"]
         is True
     )
+    assert (
+        result["final_subquery_plan"]["final_subqueries_by_slot"][
+            "LV_SENS__COMP_DEF__SYS2__V1"
+        ]["retrieval_mode"]
+        == "hybrid"
+    )
+    assert (
+        "Retrieve source documents"
+        in result["final_subquery_plan"]["final_subqueries_by_slot"][
+            "LV_SENS__COMP_DEF__SYS2__V1"
+        ]["final_subquery"]
+    )
+    assert (
+        result["final_subquery_plan"]["mapped_slot_clarification_answers"][
+            "LV_SENS__COMP_DEF__SYS2__V1"
+        ]["answer"]
+        == "12 V output terminal after filter"
+    )
+    assert (
+        result["final_subquery_plan"]["final_subqueries_by_slot"][
+            "LV_SENS__COMP_DEF__SYS2__V1"
+        ]["keyword_query"]
+        == (
+            '"LV voltage" AND ("measurement point" OR "output terminal") '
+            'AND ("after filter" OR "LC filter")'
+        )
+    )
+    assert (
+        result["final_subquery_plan"]["final_subqueries_by_slot"][
+            "LV_SENS__COMP_DEF__SYS2__V1"
+        ]["knowledge_base_paths"][0]["path"]
+        == "01_System_Elements/01_Sensing/LV_Voltage_Measurement"
+    )
+    assert [entry["node"] for entry in result["token_usage"]["matrix"]] == [
+        "understand_requirement_intent",
+        "create_slot_subqueries",
+        "finalize_slot_subqueries",
+    ]
+    assert result["token_usage"]["total"] == {
+        "input_tokens": 30,
+        "output_tokens": 15,
+        "total_tokens": 45,
+        "reasoning_tokens": 0,
+        "llm_calls": 3,
+    }
+    final_subquery = result["final_subquery_plan"]["final_subqueries_by_slot"][
+        "LV_SENS__COMP_DEF__SYS2__V1"
+    ]
+    noisy_fields = (
+        "retrieval_objective",
+        "rag_query",
+        "keyword_query",
+        "graph_query_intent",
+        "final_subquery",
+    )
+    assert all("[" not in final_subquery[field] for field in noisy_fields)
+    assert all("]" not in final_subquery[field] for field in noisy_fields)
+
+
+def test_auto_answer_clarifications_reaches_final_subqueries() -> None:
+    response = client.post(
+        "/requirement_agent/run",
+        json={
+            "requirement": "The system shall report voltage.",
+            "auto_answer_clarifications": True,
+        },
+    )
+
+    assert response.status_code == 200
+    result = response.json()["result"]
+    assert result["status"] == "final_subqueries_ready"
+    assert result["auto_answer_clarifications"] is True
+    assert result["auto_clarification_answers"]["answers"][0]["answer"] == (
+        "12 V output voltage"
+    )
+    assert result["auto_slot_clarification_answers"]["answers"][0]["answer"] == (
+        "12 V output terminal after filter"
+    )
+    assert [entry["node"] for entry in result["token_usage"]["matrix"]] == [
+        "understand_requirement_intent",
+        "requirement_intent_clarifications",
+        "create_slot_subqueries",
+        "slot_subquery_clarifications",
+        "finalize_slot_subqueries",
+    ]
+    assert result["token_usage"]["total"]["llm_calls"] == 5
+    assert result["token_usage"]["total"]["total_tokens"] == 75
     assert (
         result["final_subquery_plan"]["mapped_slot_clarification_answers"][
             "LV_SENS__COMP_DEF__SYS2__V1"

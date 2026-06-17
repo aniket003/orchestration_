@@ -350,6 +350,22 @@ textarea::placeholder {
   color: #626c79;
 }
 
+.toggle-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  color: #cbd2dc;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.toggle-row input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+}
+
 #send-button {
   width: 76px;
   min-height: 42px;

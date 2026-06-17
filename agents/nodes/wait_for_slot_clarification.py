@@ -30,6 +30,7 @@ def wait_for_slot_clarification(state: RequirementState) -> RequirementState:
                 "normalized_requirement": state.get("normalized_requirement"),
                 "intent": state.get("intent"),
                 "slot_subquery_plan": plan,
+                "token_usage": state.get("token_usage"),
                 "status": state.get("status"),
             },
         }

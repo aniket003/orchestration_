@@ -1,4 +1,5 @@
 const elements = {
+  autoAnswerToggle: document.querySelector("#auto-answer-toggle"),
   clearButton: document.querySelector("#clear-button"),
   connectionLabel: document.querySelector("#connection-label"),
   connectionPill: document.querySelector("#connection-pill"),
@@ -93,7 +94,7 @@ function appendKnowledgePaths(container, paths = []) {
 function appendFinalSubqueryPlan(card, plan) {
   const heading = document.createElement("p");
   heading.className = "question-heading";
-  heading.textContent = "Final subqueries:";
+  heading.textContent = "Retrieval subqueries:";
 
   const list = document.createElement("div");
   list.className = "subquery-list";
@@ -110,11 +111,27 @@ function appendFinalSubqueryPlan(card, plan) {
 
     const meta = document.createElement("div");
     meta.className = "subquery-meta";
-    meta.textContent = subquery.ready_for_generation
-      ? "Ready for generation"
-      : "Has unresolved placeholders";
+    const retrievalMode = subquery.retrieval_mode
+      ? ` · ${subquery.retrieval_mode}`
+      : "";
+    meta.textContent = subquery.ready_for_retrieval
+      ? `Ready for retrieval${retrievalMode}`
+      : `Needs retrieval context${retrievalMode}`;
 
     section.append(title, id, meta, textBlock(subquery.final_subquery));
+
+    if (subquery.rag_query || subquery.keyword_query || subquery.graph_query_intent) {
+      const retrievalDetails = document.createElement("pre");
+      retrievalDetails.className = "subquery-text";
+      retrievalDetails.textContent = pretty({
+        rag_query: subquery.rag_query,
+        keyword_query: subquery.keyword_query,
+        graph_query_intent: subquery.graph_query_intent,
+        required_evidence: subquery.required_evidence,
+        filters: subquery.filters,
+      });
+      section.append(retrievalDetails);
+    }
 
     if (subquery.applied_clarification_answer) {
       const answer = document.createElement("p");
@@ -134,7 +151,10 @@ function appendFinalSubqueryPlan(card, plan) {
       section.append(unresolved);
     }
 
-    appendKnowledgePaths(section, subquery.knowledge_paths ?? []);
+    appendKnowledgePaths(
+      section,
+      subquery.knowledge_base_paths ?? subquery.knowledge_paths ?? [],
+    );
     list.append(section);
   }
 
@@ -237,6 +257,16 @@ function addMessage(role, text, result = null) {
 
   if (result?.final_subquery_plan) {
     appendFinalSubqueryPlan(card, result.final_subquery_plan);
+  }
+
+  if (result?.token_usage) {
+    const heading = document.createElement("p");
+    heading.className = "question-heading";
+    heading.textContent = "Token usage:";
+    const summary = document.createElement("pre");
+    summary.className = "subquery-text";
+    summary.textContent = pretty(result.token_usage);
+    card.append(heading, summary);
   }
 
   article.append(label, card);
@@ -382,7 +412,13 @@ function connect() {
 
 function emitRequirement(requirement) {
   const ackId = nextAckId++;
-  const payload = ["requirement_agent:run", { requirement }];
+  const payload = [
+    "requirement_agent:run",
+    {
+      requirement,
+      auto_answer_clarifications: elements.autoAnswerToggle.checked,
+    },
+  ];
   pendingAcks.set(ackId, { event: payload[0], sentAt: Date.now() });
   sendFrame(`42${ackId}${JSON.stringify(payload)}`, `Emit ${payload[0]} (#${ackId})`);
 }
@@ -413,6 +449,7 @@ function emitClarificationAnswers(answerText) {
     {
       thread_id: pendingClarification.threadId,
       clarification_answers: buildClarificationAnswers(answerText),
+      auto_answer_clarifications: elements.autoAnswerToggle.checked,
     },
   ];
   pendingAcks.set(ackId, { event: payload[0], sentAt: Date.now() });

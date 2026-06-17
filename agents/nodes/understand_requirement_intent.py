@@ -9,8 +9,8 @@ from agents.knowledge.technical_matrix import (
     get_matrix_index_for_prompt,
     resolve_slot_references,
 )
+from agents.nodes.llm_usage import invoke_structured_with_usage
 from agents.state import RequirementState
-from core.llm import get_chat_model
 
 
 logger = logging.getLogger("requirement_agent.nodes")
@@ -159,13 +159,11 @@ async def understand_requirement_intent(
         raise ValueError("Requirement must not be empty.")
 
     logger.info("node=understand_requirement_intent status=started")
-    structured_model = get_chat_model().with_structured_output(
-        RequirementIntentAnalysis,
-        method="json_schema",
-        strict=True,
-    )
-    analysis = await structured_model.ainvoke(
-        [
+    analysis, token_usage = await invoke_structured_with_usage(
+        state=state,
+        node="understand_requirement_intent",
+        schema=RequirementIntentAnalysis,
+        messages=[
             SystemMessage(
                 content=(
                     f"{INTENT_SYSTEM_PROMPT}\n\n"
@@ -174,7 +172,7 @@ async def understand_requirement_intent(
                 )
             ),
             HumanMessage(content=f"USER QUERY:\n{normalized}"),
-        ]
+        ],
     )
 
     intent = analysis.model_dump(exclude={"selected_slots", "inferred_slots"})
@@ -196,6 +194,7 @@ async def understand_requirement_intent(
     return {
         "normalized_requirement": normalized,
         "intent": intent,
+        "token_usage": token_usage,
         "status": (
             "ready_for_requirement_generation"
             if analysis.ready_for_requirement_generation

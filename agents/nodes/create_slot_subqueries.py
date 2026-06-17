@@ -6,8 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from agents.knowledge.knowledge_base import enrich_subqueries_with_knowledge_paths
 from agents.knowledge.knowledge_base import enrich_slots_with_knowledge_paths
+from agents.nodes.llm_usage import invoke_structured_with_usage
 from agents.state import RequirementState
-from core.llm import get_chat_model
 
 
 logger = logging.getLogger("requirement_agent.nodes")
@@ -165,13 +165,11 @@ async def create_slot_subqueries(state: RequirementState) -> RequirementState:
         "clarification_answers": state.get("clarification_answers") or {},
     }
 
-    structured_model = get_chat_model().with_structured_output(
-        SlotSubqueryPlan,
-        method="json_schema",
-        strict=True,
-    )
-    plan = await structured_model.ainvoke(
-        [
+    plan, token_usage = await invoke_structured_with_usage(
+        state={**state, "intent": enriched_intent},
+        node="create_slot_subqueries",
+        schema=SlotSubqueryPlan,
+        messages=[
             SystemMessage(content=SLOT_SUBQUERY_SYSTEM_PROMPT),
             HumanMessage(
                 content=(
@@ -179,7 +177,7 @@ async def create_slot_subqueries(state: RequirementState) -> RequirementState:
                     f"{json.dumps(payload, indent=2, ensure_ascii=False)}"
                 )
             ),
-        ]
+        ],
     )
     plan_data = enrich_subqueries_with_knowledge_paths(plan.model_dump())
     subqueries_by_slot = {}
@@ -225,6 +223,7 @@ async def create_slot_subqueries(state: RequirementState) -> RequirementState:
     return {
         "intent": enriched_intent,
         "slot_subquery_plan": plan_data,
+        "token_usage": token_usage,
         "status": (
             "awaiting_slot_clarification"
             if plan_data["requires_clarification"]

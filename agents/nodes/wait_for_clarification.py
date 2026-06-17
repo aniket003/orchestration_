@@ -29,6 +29,7 @@ def wait_for_clarification(state: RequirementState) -> RequirementState:
                 "requirement": state.get("requirement"),
                 "normalized_requirement": state.get("normalized_requirement"),
                 "intent": intent,
+                "token_usage": state.get("token_usage"),
                 "status": state.get("status"),
             },
         }
